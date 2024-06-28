@@ -17,7 +17,6 @@ $mongoURI = 'mongodb://localhost:27017';
 $options = [];
 
 
-session_start();
 
 // Check if the user is not logged in
 if (!isset($_SESSION['username'])) {
