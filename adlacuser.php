@@ -1,95 +1,90 @@
+<?php
+// Ensure session is started only once
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Form</title>
-    <link rel="stylesheet" href="attstyles.css">
+    <title>Attendance Dashboard, Leave Application, Leave Application Dashboard, and Checkout Option</title>
+    <link rel="stylesheet" href="adlacuser.css">
 </head>
 <body>
-    <div class="container">
-        <img src="attend.jpeg" alt="Attendance Image">
-        <h2>Attendance Form</h2>
-        <form id="attendanceForm">
-            <div class="form-group">
-                <label for="id">ID:</label>
-                <input type="text" id="id" name="id" required>
-            </div>
-            <div class="form-group">
-                <label for="dob">Date:</label>
-                <input type="date" id="dob" name="dob" required>
-            </div>
-            <div class="form-group">
-                <label for="status">Status:</label>
-                <select id="status" name="status" required>
-                    <option value="">Select</option>
-                    <option value="Present">Present</option>
-                    <option value="Absent">Absent</option>
-                </select>
-            </div>
-            <!-- Hidden fields for latitude and longitude -->
-            <input type="hidden" id="latitude" name="latitude">
-            <input type="hidden" id="longitude" name="longitude">
-
-            <div class="form-group">
-                <input type="button" value="Submit" onclick="recordAttendance()">
-            </div>
-        </form>
-        <div id="message"></div>
-        <div id="geofenceStatus" style="margin-top: 20px; font-weight: bold;"></div>
-    </div>
-    <?php
-    session_start();
+    <h2>Your attendance has been marked!</h2>
     
-    // Check if the user is not logged in
-    if (!isset($_SESSION['username'])) {
-        // Redirect unauthorized users to the login page
-        header("Location: login.php");
-        exit(); // Stop further execution
-    }
-    ?>
-    <script src="attendance.js"></script>
+    <marquee behavior="alternate" direction="left"><h3>Mark your attendance, view your attendance and leave request/s, fill leave application or simply checkout!</h3></marquee>
+
+    <div class="btn1">
+        <a href="attendenceform.php" target="_blank"><button class="adlac">Mark attendance</button></a>
+    </div>
+
+    <div class="btn2">
+        <a href="dashboard.php" target="_blank"><button class="adlac">Attendance Dashboard</button></a>
+    </div>
+
+    <div class="btn3">
+        <a href="leaveappform.php" target="_blank"><button class="adlac">Leave Application</button></a>
+    </div>
+
+    <div class="btn4">
+        <a href="view_leave.php" target="_blank"><button class="adlac">Leave Application Dashboard</button></a>
+    </div>
+
+    <div class="btn5">
+        <a id="checkout-link" href="checkout-time.html"><button class="adlac">Checkout</button></a>
+    </div>
+
     <script>
-        function setTodayDate() {
-            var today = new Date().toISOString().split('T')[0];
-            document.getElementById('dob').setAttribute('min', today);
-            document.getElementById('dob').setAttribute('max', today);
-            document.getElementById('dob').value = today;
-        }
+    function formatTime(date) {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+    }
 
-        function recordAttendance() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var latitude = position.coords.latitude;
-                    var longitude = position.coords.longitude;
-                    
-                    document.getElementById('latitude').value = latitude;
-                    document.getElementById('longitude').value = longitude;
+    // Event listener to set checkout time in URL on click
+    document.getElementById('checkout-link').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default action of anchor tag
 
-                    var formData = new FormData(document.getElementById('attendanceForm'));
-
-                    var xhr = new XMLHttpRequest();
-                    xhr.open("POST", "record_attendance.php", true);
-                    xhr.onreadystatechange = function () {
-                        if (xhr.readyState == 4 && xhr.status == 200) {
-                            var response = JSON.parse(xhr.responseText);
-                            alert(response.message);
-                            if (response.message.includes("Attendance recorded successfully")) {
-                                setInterval(checkLocationPeriodically, 10 * 1000); // Start geofencing check
-                            }
-                        }
-                    };
-                    xhr.send(formData);
-
-                }, function(error) {
-                    document.getElementById('geofenceStatus').innerText = 'Error getting location: ' + error.message;
-                });
-            } else {
-                document.getElementById('geofenceStatus').innerText = 'Geolocation is not supported by this browser.';
+        // Clear session via fetch API
+        fetch('clear-session-user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ logout: true })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to clear session');
             }
-        }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response from clear-session-user.php:', data); // Log the response
 
-        window.onload = setTodayDate;
+            if (data.status === 'success') {
+                // Get current time
+                const now = new Date();
+                const checkoutTime = formatTime(now);
+
+                // Construct URL with checkout time parameter
+                const checkoutUrl = `checkout-time.html?time=${encodeURIComponent(checkoutTime)}`;
+
+                // Navigate to checkout-time.html with checkout time in URL
+                window.location.href = checkoutUrl;
+            } else {
+                throw new Error('Failed to clear session');
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing session:', error);
+            // Handle error as needed
+        });
+    });
     </script>
 </body>
 </html>
