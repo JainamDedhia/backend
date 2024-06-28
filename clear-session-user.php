@@ -31,7 +31,7 @@ if (isset($_SESSION['username'],$_SESSION['role'])) {
         session_destroy();
 
         // Respond with a success message
-        echo json_encode(["status" => "skuccess"]);
+        echo json_encode(["status" => "success"]);
     } catch (Exception $e) {
         // Respond with an error message if there's an exception
         echo json_encode(["status" => "error", "message" => "Failed to save checkout time: " . $e->getMessage()]);
